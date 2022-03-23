@@ -51,7 +51,7 @@ func run() error {
 		after = before
 	}
 	tagName, _, _ := strings.Cut(after, "-")
-	tagName, _, _ = strings.Cut(after, "~")
+	tagName, _, _ = strings.Cut(tagName, "~")
 
 	log.Println("latest version:", tagName)
 
