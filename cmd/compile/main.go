@@ -50,7 +50,6 @@ func run() error {
 	dockerRun := execCmd(nil, os.Stdout, os.Stderr,
 		"docker",
 		"run",
-		"-it",  // to forward interrupt signals
 		"--rm", // cleanup afterwards
 		"-v", kernelFolder+":/root/armhf",
 		"ghcr.io/oliverpool/crossbuild-armhf:impish-20220316",
