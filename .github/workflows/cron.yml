@@ -29,8 +29,8 @@ jobs:
           echo "checkout ${{steps.check.outputs.sha}}"
           cd linux-sources
           git fetch --depth=1 origin ${{steps.check.outputs.sha}}
+          git checkout ${{steps.check.outputs.sha}}
           cd ..
-          git submodule update
           git diff --no-ext-diff
 
       # - name: Commit the new kernel
