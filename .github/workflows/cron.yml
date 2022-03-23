@@ -26,9 +26,11 @@ jobs:
       - name: Fetch latest kernel
         if: steps.check.outputs.sha != ''
         run: |
-          echo "checkout ${{steps.check.outputs.sha}}"
+          echo "sha ${{steps.check.outputs.sha}}"
           cd linux-sources
+          echo "fetch"
           git fetch --depth=1 origin ${{steps.check.outputs.sha}}
+          echo "checkout"
           git checkout ${{steps.check.outputs.sha}}
           cd ..
           git diff --no-ext-diff
