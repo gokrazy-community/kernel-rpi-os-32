@@ -117,6 +117,13 @@ func run() error {
 		}
 	}
 
+	if err = os.WriteFile(filepath.Join(dstFolder, "placeholder.go"), []byte(`package dist
+
+// empty package so we can use the go tool with this repository
+`), 0755); err != nil {
+		return err
+	}
+
 	return nil
 }
 
