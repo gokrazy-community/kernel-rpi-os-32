@@ -25,6 +25,7 @@ jobs:
 
       - name: Fetch latest kernel
         if: steps.check.outputs.sha != ''
+        id: fetch
         run: |
           git submodule update --init --depth=1 linux-sources
           echo "sha ${{steps.check.outputs.sha}}"
@@ -33,10 +34,15 @@ jobs:
           git fetch --depth=1 origin ${{steps.check.outputs.sha}}
           echo "checkout"
           git checkout ${{steps.check.outputs.sha}}
+          echo "::set-output name=tag::$(git describe --tags)"
           cd ..
           git diff --no-ext-diff
 
-      # - name: Commit the new kernel
-      #   uses: stefanzweifel/git-auto-commit-action@v4
-      #   with:
-      #     commit_message: kernel ${{steps.check.outputs.sha}}
+      - name: Compile latest kernel
+        if: steps.check.outputs.sha != ''
+        run: go run cmd/compile/main.go
+
+      - name: Commit the new kernel
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: kernel ${{steps.fetch.outputs.tag}}
