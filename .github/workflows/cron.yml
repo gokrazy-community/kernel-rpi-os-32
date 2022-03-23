@@ -25,9 +25,15 @@ jobs:
 
       - name: Fetch latest kernel
         if: steps.check.outputs.sha != ''
-        run: echo "checkout ${{steps.check.outputs.sha}}"
+        run: |
+          echo "checkout ${{steps.check.outputs.sha}}"
+          cd linux-sources
+          git fetch --depth=1 origin ${{steps.check.outputs.sha}}
+          cd ..
+          git submodule update
+          git diff --no-ext-diff
 
-      - name: Commit the new kernel
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: kernel ${{steps.check.outputs.sha}}
+      # - name: Commit the new kernel
+      #   uses: stefanzweifel/git-auto-commit-action@v4
+      #   with:
+      #     commit_message: kernel ${{steps.check.outputs.sha}}
