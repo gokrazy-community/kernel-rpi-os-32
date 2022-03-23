@@ -25,31 +25,23 @@ jobs:
 
       - name: Fetch latest kernel
         if: steps.check.outputs.sha != ''
+        id: fetch
         run: |
           git submodule update --init --depth=1 linux-sources
           cd linux-sources
           git fetch --depth=1 origin ${{steps.check.outputs.sha}}
           git checkout ${{steps.check.outputs.sha}}
+          echo "::set-output name=version::$(make kernelversion)"
           cd ..
           git diff --no-ext-diff
-
-      - name: Temp
-        if: steps.check.outputs.sha == ''
-        id: fetch
-        run: |
-          git submodule update --init --depth=1 linux-sources
-          echo "sha ${{steps.check.outputs.sha}}"
-          cd linux-sources
-          echo "make kernelversion"
-          make kernelversion
-          echo "version"
-          echo "::set-output name=version::$(make kernelversion)"
 
       - name: Compile latest kernel
         if: steps.check.outputs.sha != ''
         run: go run cmd/compile/main.go
 
       - name: Commit the new kernel
+        if: steps.check.outputs.sha != ''
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: kernel ${{steps.fetch.outputs.version}}
+          tagging_message: v1.0.0-${{steps.fetch.outputs.version}}
