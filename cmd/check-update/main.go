@@ -28,16 +28,18 @@ func run() error {
 	kernelPrefix := "Filename: pool/main/r/raspberrypi-firmware/raspberrypi-kernel_"
 	version := ""
 	versionPrefix := "Version: "
+	found := false
 	err := scanOnlineTextFile(packagesURL, func(s string) bool {
 		if strings.HasPrefix(s, versionPrefix) {
 			version = s[len(versionPrefix):]
 		}
 		if strings.HasPrefix(s, kernelPrefix) {
+			found = true
 			return true
 		}
 		return false
 	})
-	if version == "" {
+	if !found {
 		if err != nil {
 			return err
 		}
