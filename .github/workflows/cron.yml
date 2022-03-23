@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-  schedule:
-    # daily, hour and minute chosen arbitrarily
-    - cron: "32 14 * * *"
+  # schedule:
+  #   # daily, hour and minute chosen arbitrarily
+  #   - cron: "32 14 * * *"
 
 jobs:
   build:
