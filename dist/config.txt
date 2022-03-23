@@ -1,0 +1,7 @@
+# See https://www.raspberrypi.com/documentation/computers/config_txt.html
+
+enable_uart=0
+
+kernel=vmlinuz
+
+disable_splash=1

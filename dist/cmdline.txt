@@ -1,0 +1,1 @@
+root=/dev/mmcblk0p2 init=/gokrazy/init rootwait panic=10 oops=panic
