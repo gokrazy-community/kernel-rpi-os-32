@@ -26,6 +26,7 @@ jobs:
       - name: Fetch latest kernel
         if: steps.check.outputs.sha != ''
         run: |
+          git submodule update --init --depth=1 linux-sources
           echo "sha ${{steps.check.outputs.sha}}"
           cd linux-sources
           echo "fetch"
