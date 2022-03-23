@@ -1,4 +1,4 @@
-name: Auto-update firmware
+name: Auto-update kernel
 
 on:
   push:
@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -23,13 +21,13 @@ jobs:
 
       - name: Check latest kernel version from https://archive.raspberrypi.org/debian/
         id: check
-        run: echo "::set-output name=version::$(go run ./cmd/check-update/main.go)"
+        run: echo "::set-output name=sha::$(go run ./cmd/check-update/main.go)"
 
       - name: Fetch latest kernel
-        if: steps.check.outputs.version != ''
-        run: echo "checkout ${{steps.check.outputs.version}}"
+        if: steps.check.outputs.sha != ''
+        run: echo "checkout ${{steps.check.outputs.sha}}"
 
       - name: Commit the new kernel
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: kernel ${{steps.check.outputs.version}}
+          commit_message: kernel ${{steps.check.outputs.sha}}

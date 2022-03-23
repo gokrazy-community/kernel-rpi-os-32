@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -51,40 +52,64 @@ func run() error {
 
 	log.Println("latest version:", tagName)
 
-	tags, err := gitTags("linux-sources")
+	latestSha, err := githubCommitSha(tagName)
 	if err != nil {
 		return err
 	}
-	for _, tag := range tags {
-		if tagName == tag {
-			log.Println("already up to date")
-			return nil
-		}
+	log.Println("latest commit:", latestSha)
+
+	currentSha, err := submoduleSha("linux-sources")
+	if err != nil {
+		return err
 	}
-	log.Println("outdated tag", tags)
-	fmt.Println(tagName)
+	log.Println("submodule commit:", currentSha)
+
+	if latestSha == currentSha {
+		log.Println("already up to date")
+		return nil
+	}
+	fmt.Println(latestSha)
 
 	return nil
 }
 
-func gitTags(folder string) ([]string, error) {
-	current, err := os.Getwd()
+func githubCommitSha(tagName string) (string, error) {
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/raspberrypi/linux/git/ref/tags/"+tagName, nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	defer os.Chdir(current)
+	req.Header.Add("Accept", "application/vnd.github.v3+json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-	err = os.Chdir(folder)
-	if err != nil {
-		return nil, err
+	type githubResponse struct {
+		Message string `json:"message"`
+		Object  struct {
+			Sha string `json:"sha"`
+		} `json:"object"`
 	}
-	cmd := exec.Command("git", "tag", "--points-at", "HEAD")
+	var gr githubResponse
+	err = json.NewDecoder(resp.Body).Decode(&gr)
+	if err != nil {
+		return "", err
+	}
+	if gr.Object.Sha == "" {
+		return "", errors.New("could not get sha: " + gr.Message)
+	}
+	return gr.Object.Sha, nil
+}
+
+func submoduleSha(submodule string) (string, error) {
+	cmd := exec.Command("git", "rev-parse", "HEAD:"+submodule)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
+	return strings.TrimSpace(string(out)), nil
 }
 
 func scanOnlineTextFile(url string, stopScanning func(string) bool) error {
