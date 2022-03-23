@@ -21,7 +21,7 @@ func main() {
 }
 
 const baseURL = "https://archive.raspberrypi.org/debian/"
-const packagesURL = baseURL + "dists/buster/main/binary-armhf/Packages"
+const packagesURL = baseURL + "dists/bullseye/main/binary-armhf/Packages"
 
 func run() error {
 	log.Println("checking:", packagesURL)
@@ -48,7 +48,8 @@ func run() error {
 	if !found {
 		after = before
 	}
-	tagName, _, _ := strings.Cut(after, "~")
+	tagName, _, _ := strings.Cut(after, "-")
+	tagName, _, _ = strings.Cut(after, "~")
 
 	log.Println("latest version:", tagName)
 
