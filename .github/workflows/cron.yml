@@ -4,6 +4,7 @@ on:
   schedule:
     # daily, hour and minute chosen arbitrarily
     - cron: "32 14 * * *"
+  workflow_dispatch:
 
 jobs:
   build:
