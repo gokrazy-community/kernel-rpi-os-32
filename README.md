@@ -4,9 +4,9 @@ Usage
 
 ```
 GOARCH=arm ./gokr-packer \
-		-kernel_package=github.com/oliverpool/kernel-rpi-os-32/dist \
-		-firmware_package=github.com/oliverpool/firmware-rpi/dist \
-		github.com/gokrazy/hello
+    -kernel_package=github.com/oliverpool/kernel-rpi-os-32/dist \
+    -firmware_package=github.com/oliverpool/firmware-rpi/dist \
+    github.com/gokrazy/hello
 ```
 
 ## Manual compilation
