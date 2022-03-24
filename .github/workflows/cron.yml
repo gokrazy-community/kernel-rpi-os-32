@@ -19,7 +19,10 @@ jobs:
 
       - name: Check latest kernel version from https://archive.raspberrypi.org/debian/
         id: check
-        run: echo "::set-output name=sha::$(go run ./cmd/check-update/main.go)"
+        run: |
+          # split lines to fail on exit != 0
+          sha="$(go run ./cmd/check-update/main.go)"
+          echo "::set-output name=sha::$sha"
 
       - name: Fetch latest kernel
         if: steps.check.outputs.sha != ''
@@ -29,7 +32,10 @@ jobs:
           cd linux-sources
           git fetch --depth=1 origin ${{steps.check.outputs.sha}}
           git checkout ${{steps.check.outputs.sha}}
-          echo "::set-output name=version::$(make kernelversion)"
+
+          # split lines to fail on exit != 0
+          version="$(make kernelversion)"
+          echo "::set-output name=version::$version"
           cd ..
           git diff --no-ext-diff
 
