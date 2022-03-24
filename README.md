@@ -19,6 +19,8 @@ go run cmd/compile/main.go
 
 It will compile the kernel located in `linux-sources` and copy the resulting files in the `dist` folder.
 
+It uses default kernel config (`make bcmrpi_defconfig`), as recommended by the [official documentation](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#cross-compiling-the-kernel), with the addition of the SquashFS module (`CONFIG_SQUASHFS`, which is required for gokrazy).
+
 ## Update check
 
 ```
