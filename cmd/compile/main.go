@@ -38,8 +38,6 @@ var kernelFolderFlag = flag.String("kernel", "./linux-sources", "folder containi
 func run() error {
 	flag.Parse()
 
-	// TODO new version check
-
 	kernelFolder, err := filepath.Abs(*kernelFolderFlag)
 	if err != nil {
 		return err
