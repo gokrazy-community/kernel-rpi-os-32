@@ -11,13 +11,22 @@ GOARCH=arm gokr-packer \
     github.com/gokrazy/hello
 ```
 
+## How does it differ from https://github.com/gokrazy/kernel ?
+
+|              | gokrazy-community/kernel-rpi-os-32 | gokrazy/kernel |
+| ------------ | ---------------------------------- | -------------- |
+| architecture | ARMv6 32-bit                       | ARMv8 64-bit   |
+| upstream     | linux Raspberry Pi OS fork         | linux mainline |
+
+This kernel can be used by the oldest Raspberry Pi and follows the release cycles of the Raspeberry Pi foundation.
+
 ## Manual compilation
 
 ```
 go run cmd/compile/main.go
 ```
 
-It will compile the kernel located in `linux-sources` and copy the resulting files in the `dist` folder.
+It will compile the kernel located in `linux-sources` using a [crossbuild docker image](https://github.com/gokrazy-community/crossbuild-armhf) and copy the resulting files in the `dist` folder.
 
 It uses default kernel config (`make bcmrpi_defconfig`), as recommended by the [official documentation](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#cross-compiling-the-kernel), with the addition of the SquashFS module (`CONFIG_SQUASHFS`, which is required for gokrazy).
 
