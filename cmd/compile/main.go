@@ -52,7 +52,7 @@ func run() error {
 		"run",
 		"--rm", // cleanup afterwards
 		"-v", kernelFolder+":/root/armhf",
-		"ghcr.io/oliverpool/crossbuild-armhf:impish-20220316",
+		"ghcr.io/gokrazy-community/crossbuild-armhf:impish-20220316",
 	)
 	// change the owner of the files inside docker to the current user
 	chown := func(folder string) error {

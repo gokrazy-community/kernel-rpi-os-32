@@ -7,7 +7,7 @@ of `gokr-packer`:
 
 ```
 GOARCH=arm gokr-packer \
-    -kernel_package=github.com/oliverpool/kernel-rpi-os-32/dist \
+    -kernel_package=github.com/gokrazy-community/kernel-rpi-os-32/dist \
     github.com/gokrazy/hello
 ```
 
