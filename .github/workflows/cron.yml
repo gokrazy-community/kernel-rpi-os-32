@@ -43,9 +43,13 @@ jobs:
         if: steps.check.outputs.sha != ''
         run: go run cmd/compile/main.go
 
+      - name: Show kernel config
+        if: steps.check.outputs.sha != ''
+        run: cat linux-sources/.config
+
       - name: Commit the new kernel
         if: steps.check.outputs.sha != ''
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: kernel ${{steps.fetch.outputs.version}}
-          tagging_message: v1.0.0-${{steps.fetch.outputs.version}}
+          tagging_message: v1.0.1-${{steps.fetch.outputs.version}}

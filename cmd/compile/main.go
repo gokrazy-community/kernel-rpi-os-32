@@ -69,12 +69,13 @@ func run() error {
 		return err
 	}
 
-	// adjust config to add CONFIG_SQUASHFS
+	// adjust config to add CONFIG_SQUASHFS and CONFIG_IPV6
 	configPath := filepath.Join(kernelFolder, ".config")
 	err = adjustTextFile(configPath, func(line string) bool {
-		return strings.HasPrefix(line, "CONFIG_SQUASHFS=")
+		return strings.HasPrefix(line, "CONFIG_SQUASHFS=") || strings.HasPrefix(line, "CONFIG_IPV6=")
 	}, []string{
 		"CONFIG_SQUASHFS=y",
+		"CONFIG_IPV6=y",
 	})
 	if err != nil {
 		return err
