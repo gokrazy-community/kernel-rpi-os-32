@@ -1,18 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 
 	"github.com/magefile/mage/sh"
 )
@@ -50,7 +48,7 @@ func run() error {
 		"run",
 		"--rm", // cleanup afterwards
 		"-v", kernelFolder+":/root/armhf",
-		"ghcr.io/gokrazy-community/crossbuild-armhf:impish-20220316",
+		"ghcr.io/gokrazy-community/crossbuild-armhf:jammy-20220815",
 	)
 	// change the owner of the files inside docker to the current user
 	chown := func(folder string) error {
@@ -65,24 +63,48 @@ func run() error {
 	if err := dockerRun("make", "bcmrpi_defconfig"); err != nil {
 		return err
 	}
-	if err := chown(".config"); err != nil {
+	// disable all modules (TODO: replace with mod2noconfig once we have 5.17 or newer)
+	if err := dockerRun("sed", "s/=m$/=n/i", "-i", ".config"); err != nil {
 		return err
 	}
 
-	// adjust config to add CONFIG_SQUASHFS and CONFIG_IPV6
-	configPath := filepath.Join(kernelFolder, ".config")
-	err = adjustTextFile(configPath, func(line string) bool {
-		return strings.HasPrefix(line, "CONFIG_SQUASHFS=") || strings.HasPrefix(line, "CONFIG_IPV6=")
-	}, []string{
-		"CONFIG_SQUASHFS=y",
-		"CONFIG_IPV6=y",
-	})
-	if err != nil {
+	// https://stackoverflow.com/a/56515886
+	// it doesn't check the validity of the .config file
+	// so we run make olddefconfig afterwards
+	args := []string{"./scripts/config",
+		// Basics
+		"--set-val", "SQUASHFS", "y",
+		"--set-val", "IPV6", "y",
+		"--set-val", "MODULES", "y",
+
+		// Disable module compression (wifi needs this)
+		"--set-val", "MODULE_COMPRESS_NONE", "y",
+		"--set-val", "MODULE_COMPRESS_GZIP", "n",
+		"--set-val", "MODULE_COMPRESS_XZ", "n",
+		"--set-val", "MODULE_COMPRESS_ZSTD", "n",
+
+		// WiFi
+		"--set-val", "RFKILL", "y",
+		"--set-val", "CFG80211", "y",
+		"--set-val", "BRCMFMAC", "m",
+
+		// Bluetooth
+		"--set-val", "NLMON", "y",
+		"--set-val", "BT", "m",
+		"--set-val", "BT_BCM", "m",
+		"--set-val", "BT_HCIUART", "m",
+		"--set-val", "BT_HCIUART_BCM", "y",
+	}
+
+	if err := dockerRun(args...); err != nil {
+		return err
+	}
+	if err := dockerRun("make", "olddefconfig"); err != nil {
 		return err
 	}
 
 	// compile kernel and dtbs
-	if err := dockerRun("make", "zImage", "dtbs", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
+	if err := dockerRun("make", "zImage", "dtbs", "modules", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
 		return err
 	}
 	if err := chown("arch/arm/boot"); err != nil {
@@ -98,6 +120,18 @@ func run() error {
 
 	// copy and rename kernel
 	if err = sh.Copy(filepath.Join(dstFolder, "vmlinuz"), filepath.Join(bootFolder, "zImage")); err != nil {
+		return err
+	}
+
+	// compile and move modules to dist
+	if err := dockerRun("make", "INSTALL_MOD_PATH=modules_out", "modules_install", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
+		return err
+	}
+	if err := chown("modules_out"); err != nil {
+		return err
+	}
+	err = os.Rename(filepath.Join(kernelFolder, "modules_out/lib"), path.Join(dstFolder, "lib"))
+	if err != nil {
 		return err
 	}
 
@@ -123,54 +157,4 @@ func run() error {
 	}
 
 	return nil
-}
-
-func adjustTextFile(path string, skipLine func(string) bool, appendLines []string) error {
-	b, stat, err := readFile(path) // read the whole file in memory, since we are going to overwrite it
-	if err != nil {
-		return err
-	}
-
-	dst, err := os.OpenFile(path, os.O_TRUNC|os.O_WRONLY, stat.Mode())
-	if err != nil {
-		return err
-	}
-	defer dst.Close()
-	w := bufio.NewWriter(dst)
-
-	for _, line := range strings.Split(string(b), "\n") {
-		if skipLine(line) {
-			continue
-		}
-		_, err = w.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	for _, line := range appendLines {
-		_, err = w.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	err = w.Flush()
-	if err != nil {
-		return err
-	}
-	return dst.Close()
-}
-
-func readFile(path string) ([]byte, fs.FileInfo, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer f.Close()
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return b, nil, err
-	}
-
-	stats, err := f.Stat()
-	return b, stats, err
 }

@@ -52,4 +52,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: kernel ${{steps.fetch.outputs.version}}
-          tagging_message: v1.0.1-${{steps.fetch.outputs.version}}
+          tagging_message: v1.0.2-${{steps.fetch.outputs.version}}
