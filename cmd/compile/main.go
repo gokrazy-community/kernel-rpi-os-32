@@ -36,6 +36,7 @@ const configAddendum = `
 # Basics
 CONFIG_SQUASHFS=y
 CONFIG_IPV6=y
+CONFIG_MODULES=y
 
 # Disable module compression (wifi needs this)
 CONFIG_MODULE_COMPRESS_NONE=y
@@ -70,8 +71,6 @@ func run() error {
 		"docker",
 		"run",
 		"--rm", // cleanup afterwards
-		"-e", "ARCH=arm",
-		"-e", "CROSS_COMPILE=arm-linux-gnueabihf-",
 		"-v", kernelFolder+":/root/armhf",
 		"ghcr.io/gokrazy-community/crossbuild-armhf:jammy-20220815",
 	)
