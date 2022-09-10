@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -142,7 +143,7 @@ func run() error {
 	}
 
 	// copy modules
-	os.Rename(filepath.Join(kernelFolder, "modules_out"), dstFolder)
+	os.Rename(filepath.Join(kernelFolder, "modules_out/lib"), path.Join(dstFolder, "lib"))
 
 	// copy dtb files
 	files, err := filepath.Glob(filepath.Join(bootFolder, "dts", "bcm*-rpi-*.dtb"))
