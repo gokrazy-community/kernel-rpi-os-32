@@ -12,7 +12,6 @@ import (
 	"strconv"
 
 	"github.com/magefile/mage/sh"
-	"github.com/otiai10/copy"
 )
 
 func main() {
@@ -71,6 +70,8 @@ func run() error {
 		"docker",
 		"run",
 		"--rm", // cleanup afterwards
+		"-e", "ARCH=arm",
+		"-e", "CROSS_COMPILE=arm-linux-gnueabihf-",
 		"-v", kernelFolder+":/root/armhf",
 		"ghcr.io/gokrazy-community/crossbuild-armhf:jammy-20220815",
 	)
@@ -87,8 +88,11 @@ func run() error {
 	if err := dockerRun("make", "bcmrpi_defconfig"); err != nil {
 		return err
 	}
-	// disable all modules (mod2noconfig is not in RPi 5.15)
+	// disable all modules (TODO: replace with mod2noconfig once we have 5.17 or newer)
 	if err := dockerRun("sed", "s/=m$/=n/i", "-i", ".config"); err != nil {
+		return err
+	}
+	if err := dockerRun("make", "olddefconfig"); err != nil {
 		return err
 	}
 	if err := chown(".config"); err != nil {
@@ -97,7 +101,7 @@ func run() error {
 
 	// write additions to config that we need
 	configPath := filepath.Join(kernelFolder, ".config")
-	f, err := os.OpenFile(configPath, os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.Create(configPath)
 	if err != nil {
 		return err
 	}
@@ -108,8 +112,9 @@ func run() error {
 	if err := f.Close(); err != nil {
 		return err
 	}
-	// fix the config with our addendums
-	if err := dockerRun("make", "olddefconfig"); err != nil {
+
+	// merge the config with our addendums
+	if err := dockerRun("./scripts/kconfig/merge_config.sh", ".config", ".config.gokrazy"); err != nil {
 		return err
 	}
 
@@ -138,7 +143,7 @@ func run() error {
 	}
 
 	// copy modules
-	copy.Copy(filepath.Join(kernelFolder, "modules_out"), dstFolder)
+	os.Rename(filepath.Join(kernelFolder, "modules_out"), dstFolder)
 
 	// copy dtb files
 	files, err := filepath.Glob(filepath.Join(bootFolder, "dts", "bcm*-rpi-*.dtb"))
