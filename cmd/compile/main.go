@@ -33,31 +33,6 @@ func execCmd(env map[string]string, stdout io.Writer, stderr io.Writer, cmd stri
 
 var kernelFolderFlag = flag.String("kernel", "./linux-sources", "folder containing the kernel to compile")
 
-const configAddendum = `
-# Basics
-CONFIG_SQUASHFS=y
-CONFIG_IPV6=y
-CONFIG_MODULES=y
-
-# Disable module compression (wifi needs this)
-CONFIG_MODULE_COMPRESS_NONE=y
-CONFIG_MODULE_COMPRESS_GZIP=n
-CONFIG_MODULE_COMPRESS_XZ=n
-CONFIG_MODULE_COMPRESS_ZSTD=n
-
-# WiFi
-CONFIG_RFKILL=y
-CONFIG_CFG80211=y
-CONFIG_BRCMFMAC=m
-
-# Bluetooth
-CONFIG_NLMON=y
-CONFIG_BT=m
-CONFIG_BT_BCM=m
-CONFIG_BT_HCIUART=m
-CONFIG_BT_HCIUART_BCM=y
-`
-
 func run() error {
 	flag.Parse()
 
@@ -92,29 +67,39 @@ func run() error {
 	if err := dockerRun("sed", "s/=m$/=n/i", "-i", ".config"); err != nil {
 		return err
 	}
+
+	// https://stackoverflow.com/a/56515886
+	// it doesn't check the validity of the .config file
+	// so we run make olddefconfig afterwards
+	args := []string{"./scripts/config",
+		// Basics
+		"--set-val", "SQUASHFS", "y",
+		"--set-val", "IPV6", "y",
+		"--set-val", "MODULES", "y",
+
+		// Disable module compression (wifi needs this)
+		"--set-val", "MODULE_COMPRESS_NONE", "y",
+		"--set-val", "MODULE_COMPRESS_GZIP", "n",
+		"--set-val", "MODULE_COMPRESS_XZ", "n",
+		"--set-val", "MODULE_COMPRESS_ZSTD", "n",
+
+		// WiFi
+		"--set-val", "RFKILL", "y",
+		"--set-val", "CFG80211", "y",
+		"--set-val", "BRCMFMAC", "m",
+
+		// Bluetooth
+		"--set-val", "NLMON", "y",
+		"--set-val", "BT", "m",
+		"--set-val", "BT_BCM", "m",
+		"--set-val", "BT_HCIUART", "m",
+		"--set-val", "BT_HCIUART_BCM", "y",
+	}
+
+	if err := dockerRun(args...); err != nil {
+		return err
+	}
 	if err := dockerRun("make", "olddefconfig"); err != nil {
-		return err
-	}
-	if err := chown(".config"); err != nil {
-		return err
-	}
-
-	// write additions to config that we need
-	configPath := filepath.Join(kernelFolder, ".config")
-	f, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if _, err := f.Write([]byte(configAddendum)); err != nil {
-		return err
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-
-	// merge the config with our addendums
-	if err := dockerRun("./scripts/kconfig/merge_config.sh", ".config", ".config.gokrazy"); err != nil {
 		return err
 	}
 
@@ -133,17 +118,22 @@ func run() error {
 		return err
 	}
 
-	if err := dockerRun("make", "INSTALL_MOD_PATH=modules_out", "modules_install", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
-		return err
-	}
-
 	// copy and rename kernel
 	if err = sh.Copy(filepath.Join(dstFolder, "vmlinuz"), filepath.Join(bootFolder, "zImage")); err != nil {
 		return err
 	}
 
-	// copy modules
-	os.Rename(filepath.Join(kernelFolder, "modules_out/lib"), path.Join(dstFolder, "lib"))
+	// compile and move modules to dist
+	if err := dockerRun("make", "INSTALL_MOD_PATH=modules_out", "modules_install", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
+		return err
+	}
+	if err := chown("modules_out"); err != nil {
+		return err
+	}
+	err = os.Rename(filepath.Join(kernelFolder, "modules_out/lib"), path.Join(dstFolder, "lib"))
+	if err != nil {
+		return err
+	}
 
 	// copy dtb files
 	files, err := filepath.Glob(filepath.Join(bootFolder, "dts", "bcm*-rpi-*.dtb"))
