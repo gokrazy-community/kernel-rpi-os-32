@@ -53,3 +53,8 @@ jobs:
         with:
           commit_message: kernel ${{steps.fetch.outputs.version}}
           tagging_message: v1.0.2-${{steps.fetch.outputs.version}}
+
+      - name: Add blank commit every 55 days to keep cron alive
+        uses: gautamkrishnar/keepalive-workflow@v1
+        with:
+          time_elapsed: 55
