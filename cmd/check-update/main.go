@@ -1,16 +1,20 @@
 package main
 
 import (
+	"archive/tar"
 	"bufio"
 	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/ulikunitz/xz"
 )
 
 func main() {
@@ -56,7 +60,7 @@ func run() error {
 
 	log.Println("latest version:", tagName)
 
-	latestSha, err := githubCommitSha(tagName)
+	latestSha, err := commitFromTag(tagName)
 	if err != nil {
 		return err
 	}
@@ -75,6 +79,20 @@ func run() error {
 	fmt.Println(latestSha)
 
 	return nil
+}
+
+func commitFromTag(tagName string) (string, error) {
+	latestSha, err := githubCommitSha(tagName)
+	log.Println("checking https://github.com/raspberrypi/linux tags")
+	if err == nil {
+		return latestSha, nil
+	}
+	log.Println(err)
+
+	xzURL := "https://archive.raspberrypi.org/debian/pool/main/r/raspberrypi-firmware/raspberrypi-firmware_" + tagName + ".orig.tar.xz"
+
+	log.Println("checking", xzURL)
+	return debianSourceCommitSha(xzURL)
 }
 
 func githubCommitSha(tagName string) (string, error) {
@@ -101,9 +119,46 @@ func githubCommitSha(tagName string) (string, error) {
 		return "", err
 	}
 	if gr.Object.Sha == "" {
-		return "", errors.New("could not get sha: " + gr.Message)
+		return "", fmt.Errorf("could not get sha for tag %q: %s", tagName, gr.Message)
 	}
 	return gr.Object.Sha, nil
+}
+
+func debianSourceCommitSha(xzURL string) (string, error) {
+	resp, err := http.Get(xzURL)
+	if err != nil {
+		return "", err
+	}
+	xzFile := resp.Body
+
+	//  for local testing
+	// xzFile, err := os.Open("raspberrypi-firmware_1.20230317.orig.tar.xz")
+	// if err != nil {
+	// 	return "", err
+	// }
+	defer xzFile.Close()
+
+	tarFile, err := xz.NewReader(xzFile)
+	if err != nil {
+		return "", err
+	}
+
+	tr := tar.NewReader(tarFile)
+	for {
+		hdr, err := tr.Next()
+		if err != nil {
+			return "", fmt.Errorf("extra/git_hash not found: %w", err)
+		}
+		if !strings.HasSuffix(hdr.Name, "/extra/git_hash") {
+			continue
+		}
+
+		buf, err := io.ReadAll(tr)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(string(buf)), nil
+	}
 }
 
 func submoduleSha(submodule string) (string, error) {
