@@ -18,7 +18,7 @@ GOARCH=arm gokr-packer \
 | architecture | ARMv6 32-bit                       | ARMv8 64-bit   |
 | upstream     | linux Raspberry Pi OS fork         | linux mainline |
 
-This kernel can be used by the oldest Raspberry Pi and follows the release cycles of the Raspeberry Pi foundation.
+This kernel can be used by the oldest Raspberry Pi and follows the release cycles of the Raspberry Pi foundation.
 
 ## Manual compilation
 
