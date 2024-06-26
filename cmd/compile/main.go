@@ -94,6 +94,16 @@ func run() error {
 		"--set-val", "BT_BCM", "m",
 		"--set-val", "BT_HCIUART", "m",
 		"--set-val", "BT_HCIUART_BCM", "y",
+
+		// USB Serial
+		"--set-val", "USB_ACM", "m",
+		"--set-val", "USB_SERIAL", "m",
+		"--set-val", "USB_SERIAL_GENERIC", "y",
+		"--set-val", "USB_SERIAL_CH341", "m",
+		"--set-val", "USB_SERIAL_CP210X", "m",
+		"--set-val", "USB_SERIAL_FTDI_SIO", "m",
+		"--set-val", "USB_SERIAL_PL2303", "m",
+		"--set-val", "USB_SERIAL_SAFE", "m",
 	}
 
 	if err := dockerRun(args...); err != nil {
