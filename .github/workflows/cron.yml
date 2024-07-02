@@ -2,8 +2,8 @@ name: Auto-update kernel
 
 on:
   schedule:
-    # daily, hour and minute chosen arbitrarily
-    - cron: "32 14 * * *"
+    # weekly, hour and minute chosen arbitrarily
+    - cron: "32 14 * * 1"
   workflow_dispatch:
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: kernel ${{steps.fetch.outputs.version}}
-          tagging_message: v1.0.2-${{steps.fetch.outputs.version}}
+          tagging_message: v1.0.3-${{steps.fetch.outputs.version}}
 
       - name: Add blank commit every 55 days to keep cron alive
         uses: gautamkrishnar/keepalive-workflow@v1
