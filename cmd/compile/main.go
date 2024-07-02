@@ -40,13 +40,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	releaseRaw, err := os.ReadFile(filepath.Join(kernelFolder, "include", "config", "kernel.release"))
-	if err != nil {
-		return err
-	}
-	release := strings.TrimSpace(string(releaseRaw))
 
-	fmt.Println("[kernel]", release, kernelFolder)
+	fmt.Println("[kernel]", kernelFolder)
 
 	user, err := user.Current()
 	if err != nil {
@@ -157,6 +152,12 @@ func run() error {
 	if err := dockerRun("make", "zImage", "dtbs", "modules", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
 		return err
 	}
+
+	releaseRaw, err := os.ReadFile(filepath.Join(kernelFolder, "include", "config", "kernel.release"))
+	if err != nil {
+		return err
+	}
+	release := strings.TrimSpace(string(releaseRaw))
 
 	bootFolder := filepath.Join(kernelFolder, "arch", "arm", "boot")
 	dstFolder := filepath.Join(".", "dist")
