@@ -2,3 +2,4 @@
 	path = linux-sources
 	url = https://github.com/raspberrypi/linux
 	branch = stable
+	shallow = true

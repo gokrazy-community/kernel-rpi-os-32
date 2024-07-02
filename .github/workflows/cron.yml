@@ -28,7 +28,7 @@ jobs:
         if: steps.check.outputs.sha != ''
         id: fetch
         run: |
-          git submodule update --init --depth=1 linux-sources
+          git submodule update --init
           cd linux-sources
           git fetch --depth=1 origin ${{steps.check.outputs.sha}}
           git checkout ${{steps.check.outputs.sha}}
