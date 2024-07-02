@@ -132,6 +132,18 @@ func run() error {
 		// Enable policy routing (required for Tailscale)
 		"--enable", "IP_MULTIPLE_TABLES",
 		"--enable", "IPV6_MULTIPLE_TABLES",
+
+		// USB
+		"--enable", "USB_SERIAL",
+		"--enable", "USB_SERIAL_FTDI_SIO",
+		"--enable", "USB_SERIAL_CP210X",
+		"--enable", "USB_ACM",
+		"--enable", "USB_PRINTER", //printer support /dev/usb/lp0
+
+		"--module", "USB_SERIAL_GENERIC",
+		"--module", "USB_SERIAL_CH341",
+		"--module", "USB_SERIAL_PL2303",
+		"--module", "USB_SERIAL_SAFE",
 	}
 
 	if err := dockerRun(args...); err != nil {
