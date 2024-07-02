@@ -96,6 +96,42 @@ func run() error {
 		"--module", "BT_BCM",
 		"--module", "BT_HCIUART",
 		"--enable", "BT_HCIUART_BCM",
+
+		// For nftables:
+		"--enable", "NF_TABLES",
+		"--enable", "NF_NAT_IPV4",
+		"--enable", "NF_NAT_MASQUERADE_IPV4",
+		"--enable", "NFT_PAYLOAD",
+		"--enable", "NFT_EXTHDR",
+		"--enable", "NFT_META",
+		"--enable", "NFT_CT",
+		"--enable", "NFT_RBTREE",
+		"--enable", "NFT_HASH",
+		"--enable", "NFT_COUNTER",
+		"--enable", "NFT_LOG",
+		"--enable", "NFT_LIMIT",
+		"--enable", "NFT_NAT",
+		"--enable", "NFT_COMPAT",
+		"--enable", "NFT_MASQ",
+		"--enable", "NFT_MASQ_IPV4",
+		"--enable", "NFT_REDIR",
+		"--enable", "NFT_REJECT",
+		"--enable", "NF_TABLES_IPV4",
+		"--enable", "NFT_REJECT_IPV4",
+		"--enable", "NFT_CHAIN_ROUTE_IPV4",
+		"--enable", "NFT_CHAIN_NAT_IPV4",
+		"--enable", "NF_TABLES_IPV6",
+		"--enable", "NFT_CHAIN_ROUTE_IPV6",
+		"--enable", "NFT_OBJREF",
+
+		// WireGuard VPN
+		"--enable", "NET_UDP_TUNNEL",
+		"--enable", "WIREGUARD",
+		"--enable", "TUN",
+
+		// Enable policy routing (required for Tailscale)
+		"--enable", "IP_MULTIPLE_TABLES",
+		"--enable", "IPV6_MULTIPLE_TABLES",
 	}
 
 	if err := dockerRun(args...); err != nil {
