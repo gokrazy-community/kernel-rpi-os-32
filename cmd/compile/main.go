@@ -70,27 +70,27 @@ func run() error {
 	// so we run make olddefconfig afterwards
 	args := []string{"./scripts/config",
 		// Basics
-		"--set-val", "SQUASHFS", "y",
-		"--set-val", "IPV6", "y",
-		"--set-val", "MODULES", "y",
+		"--enable", "SQUASHFS",
+		"--enable", "IPV6",
+		"--enable", "MODULES",
 
 		// Disable module compression (wifi needs this)
-		"--set-val", "MODULE_COMPRESS_NONE", "y",
-		"--set-val", "MODULE_COMPRESS_GZIP", "n",
-		"--set-val", "MODULE_COMPRESS_XZ", "n",
-		"--set-val", "MODULE_COMPRESS_ZSTD", "n",
+		"--enable", "MODULE_COMPRESS_NONE",
+		"--disable", "MODULE_COMPRESS_GZIP",
+		"--disable", "MODULE_COMPRESS_XZ",
+		"--disable", "MODULE_COMPRESS_ZSTD",
 
 		// WiFi
-		"--set-val", "RFKILL", "y",
-		"--set-val", "CFG80211", "y",
-		"--set-val", "BRCMFMAC", "m",
+		"--enable", "RFKILL",
+		"--enable", "CFG80211",
+		"--module", "BRCMFMAC",
 
 		// Bluetooth
-		"--set-val", "NLMON", "y",
-		"--set-val", "BT", "m",
-		"--set-val", "BT_BCM", "m",
-		"--set-val", "BT_HCIUART", "m",
-		"--set-val", "BT_HCIUART_BCM", "y",
+		"--enable", "NLMON",
+		"--module", "BT",
+		"--module", "BT_BCM",
+		"--module", "BT_HCIUART",
+		"--enable", "BT_HCIUART_BCM",
 	}
 
 	if err := dockerRun(args...); err != nil {
