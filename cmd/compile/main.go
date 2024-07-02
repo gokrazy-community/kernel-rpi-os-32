@@ -7,10 +7,10 @@ import (
 	"log"
 	"os"
 	"os/user"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/magefile/mage/sh"
 )
@@ -40,8 +40,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	releaseRaw, err := os.ReadFile(filepath.Join(kernelFolder, "include", "config", "kernel.release"))
+	if err != nil {
+		return err
+	}
+	release := strings.TrimSpace(string(releaseRaw))
 
-	fmt.Println("[kernel]", kernelFolder)
+	fmt.Println("[kernel]", release, kernelFolder)
 
 	user, err := user.Current()
 	if err != nil {
@@ -121,8 +126,15 @@ func run() error {
 	if err := dockerRun("make", "INSTALL_MOD_PATH=modules_out", "modules_install", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
 		return err
 	}
-	err = os.Rename(filepath.Join(kernelFolder, "modules_out/lib"), path.Join(dstFolder, "lib"))
+	err = os.Rename(filepath.Join(kernelFolder, "modules_out", "lib"), filepath.Join(dstFolder, "lib"))
 	if err != nil {
+		return err
+	}
+	// remove unused symlinks
+	if err := os.Remove(filepath.Join(dstFolder, "lib", "modules", release, "build")); err != nil {
+		return err
+	}
+	if err := os.Remove(filepath.Join(dstFolder, "lib", "modules", release, "source")); err != nil {
 		return err
 	}
 
