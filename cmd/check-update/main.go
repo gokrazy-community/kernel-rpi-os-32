@@ -73,8 +73,11 @@ func run() error {
 	log.Println("submodule commit:", currentSha)
 
 	if latestSha == currentSha {
-		log.Println("already up to date")
-		return nil
+		if _, err := os.Stat("force-update"); errors.Is(err, os.ErrNotExist) {
+			log.Println("already up to date")
+			return nil
+		}
+		os.Remove("force-update")
 	}
 	fmt.Println(latestSha)
 
