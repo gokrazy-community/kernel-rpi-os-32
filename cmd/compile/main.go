@@ -43,21 +43,21 @@ func run() error {
 
 	fmt.Println("[kernel]", kernelFolder)
 
-	dockerRun := execCmd(nil, os.Stdout, os.Stderr,
+	user, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	dockerRun := execCmd(map[string]string{
+		"UID": user.Uid,
+		"GID": user.Gid,
+	}, os.Stdout, os.Stderr,
 		"docker",
 		"run",
 		"--rm", // cleanup afterwards
 		"-v", kernelFolder+":/root/armhf",
 		"ghcr.io/gokrazy-community/crossbuild-armhf:jammy-20220815",
 	)
-	// change the owner of the files inside docker to the current user
-	chown := func(folder string) error {
-		user, err := user.Current()
-		if err != nil {
-			return err
-		}
-		return dockerRun("chown", "-R", user.Uid+":"+user.Gid, folder)
-	}
 
 	// bcmrpi_defconfig: default raspberry pi config according to https://www.raspberrypi.com/documentation/computers/linux_kernel.html#cross-compiling-the-kernel
 	// mod2noconfig: disable all modules
@@ -104,9 +104,6 @@ func run() error {
 	if err := dockerRun("make", "zImage", "dtbs", "modules", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
 		return err
 	}
-	if err := chown("arch/arm/boot"); err != nil {
-		return err
-	}
 
 	bootFolder := filepath.Join(kernelFolder, "arch", "arm", "boot")
 	dstFolder := filepath.Join(".", "dist")
@@ -122,9 +119,6 @@ func run() error {
 
 	// compile and move modules to dist
 	if err := dockerRun("make", "INSTALL_MOD_PATH=modules_out", "modules_install", "-j"+strconv.Itoa(runtime.NumCPU())); err != nil {
-		return err
-	}
-	if err := chown("modules_out"); err != nil {
 		return err
 	}
 	err = os.Rename(filepath.Join(kernelFolder, "modules_out/lib"), path.Join(dstFolder, "lib"))
