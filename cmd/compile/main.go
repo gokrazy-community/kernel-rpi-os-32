@@ -135,7 +135,7 @@ func run() error {
 		"--enable", "USB_ACM",
 		"--enable", "USB_PRINTER", //printer support /dev/usb/lp0
 
-		"--module", "USB_SERIAL_GENERIC",
+		"--enable", "USB_SERIAL_GENERIC",
 		"--module", "USB_SERIAL_CH341",
 		"--module", "USB_SERIAL_PL2303",
 		"--module", "USB_SERIAL_SAFE",
