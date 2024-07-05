@@ -30,6 +30,8 @@ It will compile the kernel located in `linux-sources` using a [crossbuild docker
 
 It uses default kernel config (`make bcmrpi_defconfig`), as recommended by the [official documentation](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#cross-compiling-the-kernel), with the addition of the SquashFS module (`CONFIG_SQUASHFS`, which is required for gokrazy) and `CONFIG_IPV6`.
 
+If you want to use your locally-compiled kernel, use the [replace directive](https://gokrazy.org/development/modules/#building-local-code-the-replace-directive). To prevent gokrazy from [complaining about `CheckDir(...): ... malformed file path`](https://github.com/gokrazy/tools/issues/72), add an empty `go.mod` file in the `linux-sources` folder.
+
 ## Update check
 
 ```
