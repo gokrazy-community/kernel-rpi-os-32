@@ -2,13 +2,20 @@
 
 This repository holds a pre-built 32 bits Linux bits kernel image for the Raspberry Pi, compiled from https://github.com/raspberrypi/linux, for usage by the [gokrazy](https://github.com/gokrazy/gokrazy) project.
 
-To use the files in this repository, adjust the `-kernel_package`
-of `gokr-packer`:
+To use the files in this repository (as well as the corresponding firmware), set the `KernelPackage` and `FirmwarePackage` of your gokrazy instance's `config.json`:
+
+```jsonc
+{
+    // ...
+    "KernelPackage": "github.com/gokrazy-community/kernel-rpi-os-32/dist",
+    "FirmwarePackage": "github.com/gokrazy-community/firmware-rpi/dist"
+}
+```
+
+When building, make sure to set the appropriate `GOARCH` and `GOARM` environment variables:
 
 ```
-GOARCH=arm gokr-packer \
-    -kernel_package=github.com/gokrazy-community/kernel-rpi-os-32/dist \
-    github.com/gokrazy/hello
+GOARCH=arm GOARM=6 gok -i <instance-name> update
 ```
 
 ## How does it differ from https://github.com/gokrazy/kernel ?
