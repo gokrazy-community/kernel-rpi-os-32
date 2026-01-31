@@ -1,4 +1,4 @@
-# Kernel for Raspberry Pi 32 bits (in sync with official bullseye repo)
+# Kernel for Raspberry Pi 32 bits (in sync with official trixie repo)
 
 This repository holds a pre-built 32 bits Linux bits kernel image for the Raspberry Pi, compiled from https://github.com/raspberrypi/linux, for usage by the [gokrazy](https://github.com/gokrazy/gokrazy) project.
 

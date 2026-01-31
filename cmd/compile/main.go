@@ -75,7 +75,7 @@ func run() error {
 		"--enable", "MODULES",
 
 		// Disable module compression (wifi needs this)
-		"--enable", "MODULE_COMPRESS_NONE",
+		"--disable", "MODULE_COMPRESS",
 		"--disable", "MODULE_COMPRESS_GZIP",
 		"--disable", "MODULE_COMPRESS_XZ",
 		"--disable", "MODULE_COMPRESS_ZSTD",
@@ -185,15 +185,15 @@ func run() error {
 		return err
 	}
 	// remove unused symlinks
-	if err := os.Remove(filepath.Join(dstFolder, "lib", "modules", release, "build")); err != nil {
+	if err := os.Remove(filepath.Join(dstFolder, "lib", "modules", release, "build")); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	if err := os.Remove(filepath.Join(dstFolder, "lib", "modules", release, "source")); err != nil {
+	if err := os.Remove(filepath.Join(dstFolder, "lib", "modules", release, "source")); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
 	// copy dtb files
-	files, err := filepath.Glob(filepath.Join(bootFolder, "dts", "bcm*-rpi-*.dtb"))
+	files, err := filepath.Glob(filepath.Join(bootFolder, "dts", "**/bcm*-rpi-*.dtb"))
 	if err != nil {
 		return err
 	}
