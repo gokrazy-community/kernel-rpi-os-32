@@ -6,6 +6,9 @@ on:
     - cron: "32 14 * * 1"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -54,8 +57,4 @@ jobs:
           commit_message: kernel ${{steps.fetch.outputs.version}}
           # bump the version below and add a force-update file to release a new version
           tagging_message: v1.0.4-${{steps.fetch.outputs.version}}
-
-      - name: Add blank commit regularly to keep cron alive (every 60 days)
-        uses: gautamkrishnar/keepalive-workflow@v1
-        with:
-          time_elapsed: 50
+          
