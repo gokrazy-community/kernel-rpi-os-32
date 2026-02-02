@@ -204,6 +204,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if len(files) == 0 {
+		return fmt.Errorf("no dtb files found under %s", filepath.Join(bootFolder, "dts"))
+	}
 	// copy config and cmdline files
 	files = append(files, "./gokrazy/cmdline.txt", "./gokrazy/config.txt")
 	for _, file := range files {
