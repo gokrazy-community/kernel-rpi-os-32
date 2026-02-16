@@ -31,15 +31,13 @@ jobs:
         if: steps.check.outputs.sha != ''
         id: fetch
         run: |
-          git submodule update --init
-          cd linux-sources
-          git fetch --depth=1 origin ${{steps.check.outputs.sha}}
-          git checkout ${{steps.check.outputs.sha}}
+          # update the submodule (faster than update/fetch/checkout)
+          rm -rf linux-sources
+          git clone --depth=1 --revision ${{steps.check.outputs.sha}} https://github.com/raspberrypi/linux linux-sources
 
           # split lines to fail on exit != 0
-          version="$(make kernelversion)"
+          version="$(cd linux-sources && make kernelversion)"
           echo "version=$version" >> $GITHUB_OUTPUT
-          cd ..
           git diff --no-ext-diff
 
       - name: Compile latest kernel
@@ -56,5 +54,4 @@ jobs:
         with:
           commit_message: kernel ${{steps.fetch.outputs.version}}
           # bump the version below and add a force-update file to release a new version
-          tagging_message: v1.0.4-${{steps.fetch.outputs.version}}
-          
+          tagging_message: v1.1.0-${{steps.fetch.outputs.version}}

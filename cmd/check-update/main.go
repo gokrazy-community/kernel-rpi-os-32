@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/ulikunitz/xz"
@@ -25,21 +25,22 @@ func main() {
 	}
 }
 
-const baseURL = "https://archive.raspberrypi.org/debian/"
-const packagesGzURL = baseURL + "dists/bullseye/main/binary-armhf/Packages.gz"
+const (
+	baseURL       = "https://archive.raspberrypi.org/debian/"
+	packagesGzURL = baseURL + "dists/trixie/main/binary-armhf/Packages.gz"
+)
 
 func run() error {
 	log.Println("checking:", packagesGzURL)
-	kernelPrefix := "Filename: pool/main/r/raspberrypi-firmware/raspberrypi-kernel_"
+	packageName := "Package: linux-image-rpi-v6"
 	version := ""
 	versionPrefix := "Version: "
 	found := false
 	err := fetchAndScanGzTextFile(packagesGzURL, func(s string) bool {
-		if strings.HasPrefix(s, versionPrefix) {
-			version = s[len(versionPrefix):]
-		}
-		if strings.HasPrefix(s, kernelPrefix) {
+		if s == packageName {
 			found = true
+		} else if found && strings.HasPrefix(s, versionPrefix) {
+			version = s[len(versionPrefix):]
 			return true
 		}
 		return false
@@ -55,8 +56,7 @@ func run() error {
 	if !found {
 		after = before
 	}
-	tagName, _, _ := strings.Cut(after, "-")
-	tagName, _, _ = strings.Cut(tagName, "~")
+	tagName, _, _ := strings.Cut(after, "~")
 
 	log.Println("latest version:", tagName)
 
@@ -85,46 +85,10 @@ func run() error {
 }
 
 func commitFromTag(tagName string) (string, error) {
-	latestSha, err := githubCommitSha(tagName)
-	log.Println("checking https://github.com/raspberrypi/linux tags")
-	if err == nil {
-		return latestSha, nil
-	}
-	log.Println(err)
-
-	xzURL := "https://archive.raspberrypi.org/debian/pool/main/r/raspberrypi-firmware/raspberrypi-firmware_" + tagName + ".orig.tar.xz"
+	xzURL := "https://archive.raspberrypi.org/debian/pool/main/l/linux/linux_" + tagName + ".debian.tar.xz"
 
 	log.Println("checking", xzURL)
 	return debianSourceCommitSha(xzURL)
-}
-
-func githubCommitSha(tagName string) (string, error) {
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/raspberrypi/linux/git/ref/tags/"+tagName, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	type githubResponse struct {
-		Message string `json:"message"`
-		Object  struct {
-			Sha string `json:"sha"`
-		} `json:"object"`
-	}
-	var gr githubResponse
-	err = json.NewDecoder(resp.Body).Decode(&gr)
-	if err != nil {
-		return "", err
-	}
-	if gr.Object.Sha == "" {
-		return "", fmt.Errorf("could not get sha for tag %q: %s", tagName, gr.Message)
-	}
-	return gr.Object.Sha, nil
 }
 
 func debianSourceCommitSha(xzURL string) (string, error) {
@@ -132,10 +96,14 @@ func debianSourceCommitSha(xzURL string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return "", fmt.Errorf("could not download package source: %s", resp.Status)
+	}
 	xzFile := resp.Body
 
 	//  for local testing
-	// xzFile, err := os.Open("raspberrypi-firmware_1.20230317.orig.tar.xz")
+	// xzFile, err := os.Open("linux_6.12.62-1+rpt1.debian.tar.xz")
 	// if err != nil {
 	// 	return "", err
 	// }
@@ -150,18 +118,28 @@ func debianSourceCommitSha(xzURL string) (string, error) {
 	for {
 		hdr, err := tr.Next()
 		if err != nil {
-			return "", fmt.Errorf("extra/git_hash not found: %w", err)
+			return "", fmt.Errorf("debian/changelog not found: %w", err)
 		}
-		if !strings.HasSuffix(hdr.Name, "/extra/git_hash") {
+		if !strings.HasSuffix(hdr.Name, "debian/changelog") {
 			continue
 		}
 
-		buf, err := io.ReadAll(tr)
-		if err != nil {
-			return "", err
-		}
-		return strings.TrimSpace(string(buf)), nil
+		return debianChangelogCommitSha(tr)
 	}
+}
+
+func debianChangelogCommitSha(tr io.Reader) (string, error) {
+	re := regexp.MustCompile(`(?i)^\s*\*\s*Linux commit:\s*([0-9a-f]{7,40})\b`)
+	scanner := bufio.NewScanner(tr)
+	for scanner.Scan() {
+		if m := re.FindStringSubmatch(scanner.Text()); m != nil {
+			return m[1], nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return "", errors.New("debian/changelog does not contain 'Linux commit'")
 }
 
 func submoduleSha(submodule string) (string, error) {
