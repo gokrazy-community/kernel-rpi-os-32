@@ -40,13 +40,17 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
           git diff --no-ext-diff
 
-      - name: Compile latest kernel
+      - name: Compile latest kernel (default)
         if: steps.check.outputs.sha != ''
-        run: go run cmd/compile/main.go
+        run: |
+          go run cmd/compile/main.go
+          cat linux-sources/.config
 
-      - name: Show kernel config
+      - name: Compile latest kernel (bcm2709_defconfig)
         if: steps.check.outputs.sha != ''
-        run: cat linux-sources/.config
+        run: |
+          go run cmd/compile/main.go --make-config=bcm2709_defconfig --dist=./dist-bcm2709
+          cat linux-sources/.config
 
       - name: Commit the new kernel
         if: steps.check.outputs.sha != ''
