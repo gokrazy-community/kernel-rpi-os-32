@@ -30,16 +30,15 @@ const packagesGzURL = baseURL + "dists/trixie/main/binary-armhf/Packages.gz"
 
 func run() error {
 	log.Println("checking:", packagesGzURL)
-	kernelPrefix := "Filename: pool/main/l/linux/linux-image-rpi-v6_"
+	packageName := "Package: linux-image-rpi-v6"
 	version := ""
 	versionPrefix := "Version: "
 	found := false
 	err := fetchAndScanGzTextFile(packagesGzURL, func(s string) bool {
-		if strings.HasPrefix(s, versionPrefix) {
-			version = s[len(versionPrefix):]
-		}
-		if strings.HasPrefix(s, kernelPrefix) {
+		if s == packageName {
 			found = true
+		} else if found && strings.HasPrefix(s, versionPrefix) {
+			version = s[len(versionPrefix):]
 			return true
 		}
 		return false
