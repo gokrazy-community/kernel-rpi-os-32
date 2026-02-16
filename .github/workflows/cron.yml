@@ -28,6 +28,7 @@ jobs:
         if: steps.check.outputs.sha != ''
         id: fetch
         run: |
+          # update the submodule (faster than update/fetch/checkout)
           rm -rf linux-sources
           git clone --depth=1 --revision ${{steps.check.outputs.sha}} https://github.com/raspberrypi/linux linux-sources
 
