@@ -25,8 +25,10 @@ func main() {
 	}
 }
 
-const baseURL = "https://archive.raspberrypi.org/debian/"
-const packagesGzURL = baseURL + "dists/trixie/main/binary-armhf/Packages.gz"
+const (
+	baseURL       = "https://archive.raspberrypi.org/debian/"
+	packagesGzURL = baseURL + "dists/trixie/main/binary-armhf/Packages.gz"
+)
 
 func run() error {
 	log.Println("checking:", packagesGzURL)
@@ -137,7 +139,7 @@ func debianChangelogCommitSha(tr io.Reader) (string, error) {
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
-	return "", errors.New("debian/changelog does not contain 'Linux commit'");
+	return "", errors.New("debian/changelog does not contain 'Linux commit'")
 }
 
 func submoduleSha(submodule string) (string, error) {
