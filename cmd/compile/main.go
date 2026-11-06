@@ -32,6 +32,8 @@ func execCmd(env map[string]string, stdout io.Writer, stderr io.Writer, cmd stri
 }
 
 var kernelFolderFlag = flag.String("kernel", "./linux-sources", "folder containing the kernel to compile")
+var makeConfigFlag = flag.String("make-config", "bcmrpi_defconfig", "arguments to pass to the initial 'make' config step")
+var distFolderFlag = flag.String("dist", "./dist", "folder to place compiled artifacts")
 
 func run() error {
 	flag.Parse()
@@ -59,9 +61,14 @@ func run() error {
 		return dockerRun("chown", "-R", user.Uid+":"+user.Gid, folder)
 	}
 
-	// bcmrpi_defconfig: default raspberry pi config according to https://www.raspberrypi.com/documentation/computers/linux_kernel.html#cross-compiling-the-kernel
+	// bcmrpi_defconfig:  default raspberry pi config for 32 bit Pi 1, Zero
+	// bcm2709_defconfig: default raspberry pi config for 32 bit Pi 2, 3, and Zero 2
+	// See: https://www.raspberrypi.com/documentation/computers/linux_kernel.html#native-build-configuration
+	configArgs := strings.Fields(*makeConfigFlag)
 	// mod2noconfig: disable all modules
-	if err := dockerRun("make", "bcmrpi_defconfig", "mod2noconfig"); err != nil {
+	configArgs = append(configArgs, "mod2noconfig")
+	configArgs = append([]string{"make"}, configArgs...)
+	if err := dockerRun(configArgs...); err != nil {
 		return err
 	}
 
@@ -163,7 +170,7 @@ func run() error {
 	release := strings.TrimSpace(string(releaseRaw))
 
 	bootFolder := filepath.Join(kernelFolder, "arch", "arm", "boot")
-	dstFolder := filepath.Join(".", "dist")
+	dstFolder := filepath.Join(".", *distFolderFlag)
 	os.RemoveAll(dstFolder) // ignore any error
 	if err = os.MkdirAll(dstFolder, 0755); err != nil {
 		return err
@@ -197,6 +204,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if len(files) == 0 {
+		return fmt.Errorf("no dtb files found under %s", filepath.Join(bootFolder, "dts"))
+	}
 	// copy config and cmdline files
 	files = append(files, "./gokrazy/cmdline.txt", "./gokrazy/config.txt")
 	for _, file := range files {
@@ -206,10 +216,9 @@ func run() error {
 		}
 	}
 
-	if err = os.WriteFile(filepath.Join(dstFolder, "placeholder.go"), []byte(`package dist
-
-// empty package so we can use the go tool with this repository
-`), 0755); err != nil {
+	packageName := filepath.Base(dstFolder)
+	content := []byte(fmt.Sprintf("package %s\n\n// empty package so we can use the go tool with this repository\n", packageName))
+	if err = os.WriteFile(filepath.Join(dstFolder, "placeholder.go"), content, 0644); err != nil {
 		return err
 	}
 
